@@ -122,12 +122,5 @@ class Autorotate implements FilterInterface
      *
      * @return \Imagine\Image\Palette\Color\ColorInterface
      */
-    private function getColor(ImageInterface $image)
-    {
-        if ($this->color instanceof ColorInterface) {
-            return $this->color;
-        }
-
-        return $image->palette()->color($this->color);
-    }
+    
 }

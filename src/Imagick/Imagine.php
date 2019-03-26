@@ -180,20 +180,7 @@ final class Imagine extends AbstractImagine
      *
      * @return \Imagine\Image\Palette\CMYK|\Imagine\Image\Palette\Grayscale|\Imagine\Image\Palette\RGB
      */
-    private function createPalette(\Imagick $imagick)
-    {
-        switch ($imagick->getImageColorspace()) {
-            case \Imagick::COLORSPACE_RGB:
-            case \Imagick::COLORSPACE_SRGB:
-                return new RGB();
-            case \Imagick::COLORSPACE_CMYK:
-                return new CMYK();
-            case \Imagick::COLORSPACE_GRAY:
-                return new Grayscale();
-            default:
-                throw new NotSupportedException('Only RGB and CMYK colorspace are currently supported');
-        }
-    }
+    
 
     /**
      * Returns ImageMagick version.
@@ -202,11 +189,5 @@ final class Imagine extends AbstractImagine
      *
      * @return string
      */
-    private function getVersion(\Imagick $imagick)
-    {
-        $v = $imagick->getVersion();
-        list($version) = sscanf($v['versionString'], 'ImageMagick %s %04d-%02d-%02d %s %s');
-
-        return $version;
-    }
+    
 }

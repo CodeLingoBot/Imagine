@@ -464,11 +464,5 @@ final class Drawer implements DrawerInterface
      *
      * @return string
      */
-    private function getColor(ColorInterface $color)
-    {
-        $pixel = new \ImagickPixel((string) $color);
-        $pixel->setColorValue(\Imagick::COLOR_ALPHA, $color->getAlpha() / 100);
-
-        return $pixel;
-    }
+    
 }

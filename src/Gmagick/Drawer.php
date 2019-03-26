@@ -434,12 +434,5 @@ final class Drawer implements DrawerInterface
      *
      * @return \GmagickPixel
      */
-    private function getColor(ColorInterface $color)
-    {
-        if (!$color->isOpaque()) {
-            throw new InvalidArgumentException('Gmagick doesn\'t support transparency');
-        }
-
-        return new \GmagickPixel((string) $color);
-    }
+    
 }

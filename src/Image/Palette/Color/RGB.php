@@ -208,14 +208,7 @@ final class RGB implements ColorInterface
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function setAlpha($alpha)
-    {
-        if (!is_int($alpha) || $alpha < 0 || $alpha > 100) {
-            throw new InvalidArgumentException(sprintf('Alpha must be an integer between 0 and 100, %s given', $alpha));
-        }
-
-        $this->alpha = $alpha;
-    }
+    
 
     /**
      * Internal.
@@ -226,17 +219,5 @@ final class RGB implements ColorInterface
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function setColor(array $color)
-    {
-        if (count($color) !== 3) {
-            throw new InvalidArgumentException('Color argument must look like array(R, G, B), where R, G, B are the integer values between 0 and 255 for red, green and blue color indexes accordingly');
-        }
-
-        $colors = array_values($color);
-        array_walk($colors, function (&$color) {
-            $color = max(0, min(255, $color));
-        });
-
-        list($this->r, $this->g, $this->b) = $colors;
-    }
+    
 }

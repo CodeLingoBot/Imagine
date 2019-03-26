@@ -79,16 +79,7 @@ class ExifMetadataReader extends AbstractMetadataReader
      *
      * @return array
      */
-    private function doReadData($data)
-    {
-        if (substr($data, 0, 2) === 'II') {
-            $mime = 'image/tiff';
-        } else {
-            $mime = 'image/jpeg';
-        }
-
-        return $this->extract('data://' . $mime . ';base64,' . base64_encode($data));
-    }
+    
 
     /**
      * Performs the exif data extraction given a path or data-URI representation.
@@ -97,33 +88,5 @@ class ExifMetadataReader extends AbstractMetadataReader
      *
      * @return array
      */
-    private function extract($path)
-    {
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-            if (error_reporting() !== 0) {
-                throw new \Exception($errstr, $errno);
-            }
-        }, E_WARNING | E_NOTICE);
-        try {
-            $exifData = @exif_read_data($path, null, true, false);
-        } catch (\Exception $e) {
-            $exifData = false;
-        }
-        restore_error_handler();
-        if ($exifData === false) {
-            return array();
-        }
-
-        $metadata = array();
-        foreach ($exifData as $prefix => $values) {
-            if (is_array($values)) {
-                $prefix = strtolower($prefix);
-                foreach ($values as $prop => $value) {
-                    $metadata[$prefix . '.' . $prop] = $value;
-                }
-            }
-        }
-
-        return $metadata;
-    }
+    
 }

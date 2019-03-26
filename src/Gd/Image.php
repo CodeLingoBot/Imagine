@@ -595,83 +595,7 @@ final class Image extends AbstractImage
      * @throws \Imagine\Exception\InvalidArgumentException
      * @throws \Imagine\Exception\RuntimeException
      */
-    private function saveOrOutput($format, array $options, $filename = null)
-    {
-        $format = $this->normalizeFormat($format);
-
-        if (!$this->supported($format)) {
-            throw new InvalidArgumentException(sprintf('Saving image in "%s" format is not supported, please use one of the following extensions: "%s"', $format, implode('", "', $this->supported())));
-        }
-
-        $save = 'image' . $format;
-        $args = array(&$this->resource, $filename);
-
-        switch ($format) {
-            case 'bmp':
-                if (isset($options['compressed'])) {
-                    $args[] = (bool) $options['compressed'];
-                }
-                break;
-            case 'jpeg':
-                if (!isset($options['jpeg_quality'])) {
-                    if (isset($options['quality'])) {
-                        $options['jpeg_quality'] = $options['quality'];
-                    }
-                }
-                if (isset($options['jpeg_quality'])) {
-                    $args[] = $options['jpeg_quality'];
-                }
-                break;
-            case 'png':
-                if (!isset($options['png_compression_level'])) {
-                    if (isset($options['quality'])) {
-                        $options['png_compression_level'] = round((100 - $options['quality']) * 9 / 100);
-                    }
-                }
-                if (isset($options['png_compression_level'])) {
-                    if ($options['png_compression_level'] < 0 || $options['png_compression_level'] > 9) {
-                        throw new InvalidArgumentException('png_compression_level option should be an integer from 0 to 9');
-                    }
-                    $args[] = $options['png_compression_level'];
-                } else {
-                    $args[] = -1; // use default level
-                }
-                if (!isset($options['png_compression_filter'])) {
-                    if (isset($options['filters'])) {
-                        $options['png_compression_filter'] = $options['filters'];
-                    }
-                }
-                if (isset($options['png_compression_filter'])) {
-                    if (~PNG_ALL_FILTERS & $options['png_compression_filter']) {
-                        throw new InvalidArgumentException('png_compression_filter option should be a combination of the PNG_FILTER_XXX constants');
-                    }
-                    $args[] = $options['png_compression_filter'];
-                }
-                break;
-            case 'wbmp':
-            case 'xbm':
-                if (isset($options['foreground'])) {
-                    $args[] = $options['foreground'];
-                }
-                break;
-            case 'webp':
-                if (!isset($options['webp_quality'])) {
-                    if (isset($options['quality'])) {
-                        $options['webp_quality'] = $options['quality'];
-                    }
-                }
-                if ($options['webp_quality'] < 0 || $options['webp_quality'] > 100) {
-                    throw new InvalidArgumentException('webp_quality option should be an integer from 0 to 100');
-                }
-                break;
-        }
-
-        $this->withExceptionHandler(function () use ($save, $args) {
-            if (false === call_user_func_array($save, $args)) {
-                throw new RuntimeException('Save operation failed');
-            }
-        });
-    }
+    
 
     /**
      * Generates a GD image.
@@ -683,28 +607,7 @@ final class Image extends AbstractImage
      *
      * @return resource
      */
-    private function createImage(BoxInterface $size, $operation)
-    {
-        $resource = imagecreatetruecolor($size->getWidth(), $size->getHeight());
-
-        if (false === $resource) {
-            throw new RuntimeException('Image ' . $operation . ' failed');
-        }
-
-        if (false === imagealphablending($resource, false) || false === imagesavealpha($resource, true)) {
-            throw new RuntimeException('Image ' . $operation . ' failed');
-        }
-
-        if (function_exists('imageantialias')) {
-            imageantialias($resource, true);
-        }
-
-        $transparent = imagecolorallocatealpha($resource, 255, 255, 255, 127);
-        imagefill($resource, 0, 0, $transparent);
-        imagecolortransparent($resource, $transparent);
-
-        return $resource;
-    }
+    
 
     /**
      * Generates a GD color from Color instance.
@@ -716,20 +619,7 @@ final class Image extends AbstractImage
      *
      * @return int A color identifier
      */
-    private function getColor(ColorInterface $color)
-    {
-        if (!$color instanceof RGBColor) {
-            throw new InvalidArgumentException('GD driver only supports RGB colors');
-        }
-
-        $index = imagecolorallocatealpha($this->resource, $color->getRed(), $color->getGreen(), $color->getBlue(), round(127 * (100 - $color->getAlpha()) / 100));
-
-        if (false === $index) {
-            throw new RuntimeException(sprintf('Unable to allocate color "RGB(%s, %s, %s)" with transparency of %d percent', $color->getRed(), $color->getGreen(), $color->getBlue(), $color->getAlpha()));
-        }
-
-        return $index;
-    }
+    
 
     /**
      * Normalizes a given format name.
@@ -738,16 +628,7 @@ final class Image extends AbstractImage
      *
      * @return string
      */
-    private function normalizeFormat($format)
-    {
-        $format = strtolower($format);
-
-        if ('jpg' === $format || 'pjpeg' === $format) {
-            $format = 'jpeg';
-        }
-
-        return $format;
-    }
+    
 
     /**
      * Checks whether a given format is supported by GD library.
@@ -756,16 +637,7 @@ final class Image extends AbstractImage
      *
      * @return bool
      */
-    private function supported($format = null)
-    {
-        $formats = self::getSupportedFormats();
-
-        if (null === $format) {
-            return array_keys($formats);
-        }
-
-        return is_string($format) && isset($formats[$format]);
-    }
+    
 
     /**
      * @param callable $callback
@@ -774,28 +646,7 @@ final class Image extends AbstractImage
      * @throws \Exception
      * @throws \Throwable
      */
-    private function withExceptionHandler($callback)
-    {
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-            if (0 === error_reporting()) {
-                return;
-            }
-
-            throw new RuntimeException($errstr, $errno, new \ErrorException($errstr, 0, $errno, $errfile, $errline));
-        }, E_WARNING | E_NOTICE);
-        $exception = null;
-        try {
-            $callback();
-        } catch (Exception $x) {
-            $exception = $x;
-        } catch (Throwable $x) {
-            $exception = $x;
-        }
-        restore_error_handler();
-        if ($exception !== null) {
-            throw $exception;
-        }
-    }
+    
 
     /**
      * Get the mime type based on format.
@@ -806,17 +657,7 @@ final class Image extends AbstractImage
      *
      * @return string mime-type
      */
-    private function getMimeType($format)
-    {
-        $format = $this->normalizeFormat($format);
-        $formats = self::getSupportedFormats();
-
-        if (!isset($formats[$format])) {
-            throw new RuntimeException('Invalid format');
-        }
-
-        return $formats[$format]['mimeType'];
-    }
+    
 
     /**
      * @return array

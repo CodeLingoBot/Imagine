@@ -11,16 +11,7 @@ use Imagine\Test\ImagineTestCase;
  */
 class Issue59Test extends ImagineTestCase
 {
-    private function getImagine()
-    {
-        try {
-            $imagine = new Imagine();
-        } catch (RuntimeException $e) {
-            $this->markTestSkipped($e->getMessage());
-        }
-
-        return $imagine;
-    }
+    
 
     public function testShouldResize()
     {

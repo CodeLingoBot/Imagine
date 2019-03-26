@@ -108,35 +108,7 @@ abstract class AbstractImage implements ImageInterface, ClassFactoryAwareInterfa
      *
      * @param int $settings
      */
-    private function checkThumbnailSettings($settings)
-    {
-        // Preserve BC until version 1.0
-        if (is_string($settings)) {
-            if ($settings === 'inset') {
-                $settings = ImageInterface::THUMBNAIL_INSET;
-            } elseif ($settings === 'outbound') {
-                $settings = ImageInterface::THUMBNAIL_OUTBOUND;
-            } elseif (is_numeric($settings)) {
-                $settings = (int) $settings;
-            }
-        }
-        if (!is_int($settings)) {
-            throw new InvalidArgumentException('Invalid setting specified');
-        }
-        $mode = $settings & 0xffff;
-        if ($mode === 0) {
-            $settings |= ImageInterface::THUMBNAIL_INSET;
-        } else {
-            if (!in_array($mode, $this->getAllThumbnailModes())) {
-                if (strlen(str_replace('0', '', decbin($mode))) === 1) {
-                    throw new InvalidArgumentException('Invalid setting specified');
-                }
-                throw new InvalidArgumentException('Only one mode should be specified');
-            }
-        }
-
-        return $settings;
-    }
+    
 
     /**
      * Get all the available thumbnail modes.

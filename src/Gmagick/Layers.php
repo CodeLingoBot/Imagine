@@ -144,19 +144,7 @@ class Layers extends AbstractLayers
      *
      * @return \Imagine\Gmagick\Image
      */
-    private function extractAt($offset)
-    {
-        if (!isset($this->layers[$offset])) {
-            try {
-                $this->resource->setimageindex($offset);
-                $this->layers[$offset] = $this->getClassFactory()->createImage(ClassFactoryInterface::HANDLE_GMAGICK, $this->resource->getimage(), $this->palette, new MetadataBag());
-            } catch (\GmagickException $e) {
-                throw new RuntimeException(sprintf('Failed to extract layer %d', $offset), $e->getCode(), $e);
-            }
-        }
-
-        return $this->layers[$offset];
-    }
+    
 
     /**
      * {@inheritdoc}

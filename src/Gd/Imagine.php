@@ -147,56 +147,14 @@ final class Imagine extends AbstractImagine
      *
      * @return \Imagine\Image\ImageInterface
      */
-    private function wrap($resource, PaletteInterface $palette, MetadataBag $metadata)
-    {
-        if (!imageistruecolor($resource)) {
-            if (function_exists('imagepalettetotruecolor')) {
-                if (false === imagepalettetotruecolor($resource)) {
-                    throw new RuntimeException('Could not convert a palette based image to true color');
-                }
-            } else {
-                list($width, $height) = array(imagesx($resource), imagesy($resource));
-
-                // create transparent truecolor canvas
-                $truecolor = imagecreatetruecolor($width, $height);
-                $transparent = imagecolorallocatealpha($truecolor, 255, 255, 255, 127);
-
-                imagealphablending($truecolor, false);
-                imagefilledrectangle($truecolor, 0, 0, $width, $height, $transparent);
-                imagealphablending($truecolor, false);
-
-                imagecopy($truecolor, $resource, 0, 0, 0, 0, $width, $height);
-
-                imagedestroy($resource);
-                $resource = $truecolor;
-            }
-        }
-
-        if (false === imagealphablending($resource, false) || false === imagesavealpha($resource, true)) {
-            throw new RuntimeException('Could not set alphablending, savealpha and antialias values');
-        }
-
-        if (function_exists('imageantialias')) {
-            imageantialias($resource, true);
-        }
-
-        return $this->getClassFactory()->createImage(ClassFactoryInterface::HANDLE_GD, $resource, $palette, $metadata);
-    }
+    
 
     /**
      * @param string $version
      *
      * @throws \Imagine\Exception\RuntimeException
      */
-    private function requireGdVersion($version)
-    {
-        if (!function_exists('gd_info')) {
-            throw new RuntimeException('Gd not installed');
-        }
-        if (version_compare(GD_VERSION, $version, '<')) {
-            throw new RuntimeException(sprintf('GD2 version %s or higher is required, %s provided', $version, GD_VERSION));
-        }
-    }
+    
 
     /**
      * @param string $string
@@ -206,37 +164,12 @@ final class Imagine extends AbstractImagine
      *
      * @return \Imagine\Image\ImageInterface
      */
-    private function doLoad($string, MetadataBag $metadata)
-    {
-        $resource = $this->withoutExceptionHandlers(function () use (&$string) {
-            return @imagecreatefromstring($string);
-        });
-
-        if (!is_resource($resource)) {
-            throw new RuntimeException('An image could not be created from the given input');
-        }
-
-        return $this->wrap($resource, new RGB(), $metadata);
-    }
+    
 
     /**
      * @param callable $callback
      *
      * @return mixed
      */
-    private function withoutExceptionHandlers($callback)
-    {
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-        }, -1);
-        try {
-            $result = $callback();
-        } catch (\Exception $x) {
-            $result = null;
-        } catch (\Throwable $x) {
-            $result = null;
-        }
-        restore_error_handler();
-
-        return $result;
-    }
+    
 }

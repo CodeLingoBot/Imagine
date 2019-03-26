@@ -158,14 +158,7 @@ final class Gray implements ColorInterface
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function setAlpha($alpha)
-    {
-        if (!is_int($alpha) || $alpha < 0 || $alpha > 100) {
-            throw new InvalidArgumentException(sprintf('Alpha must be an integer between 0 and 100, %s given', $alpha));
-        }
-
-        $this->alpha = $alpha;
-    }
+    
 
     /**
      * Performs checks for color validity (array of array(gray)).
@@ -174,15 +167,5 @@ final class Gray implements ColorInterface
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function setColor(array $color)
-    {
-        if (count($color) !== 1) {
-            throw new InvalidArgumentException('Color argument must look like array(gray), where gray is the integer value between 0 and 255 for the grayscale');
-        }
-
-        $color = array_values($color);
-        $color[0] = max(0, min(255, $color[0]));
-
-        list($this->gray) = $color;
-    }
+    
 }

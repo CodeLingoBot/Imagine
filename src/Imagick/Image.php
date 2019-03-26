@@ -394,30 +394,7 @@ final class Image extends AbstractImage
      * @param array $options
      * @param string $path
      */
-    private function prepareOutput(array $options, $path = null)
-    {
-        if (isset($options['format'])) {
-            $this->imagick->setImageFormat($options['format']);
-        }
-
-        if (isset($options['animated']) && true === $options['animated']) {
-            $format = isset($options['format']) ? $options['format'] : 'gif';
-            $delay = isset($options['animated.delay']) ? $options['animated.delay'] : null;
-            $loops = isset($options['animated.loops']) ? $options['animated.loops'] : 0;
-
-            $options['flatten'] = false;
-
-            $this->layers()->animate($format, $delay, $loops);
-        } else {
-            $this->layers()->merge();
-        }
-        $this->imagick = $this->applyImageOptions($this->imagick, $options, $path);
-
-        // flatten only if image has multiple layers
-        if ((!isset($options['flatten']) || $options['flatten'] === true) && $this->layers()->count() > 1) {
-            $this->flatten();
-        }
-    }
+    
 
     /**
      * {@inheritdoc}
@@ -721,21 +698,7 @@ final class Image extends AbstractImage
     /**
      * Flatten the image.
      */
-    private function flatten()
-    {
-        /*
-         * @see https://github.com/mkoppanen/imagick/issues/45
-         */
-        try {
-            if (method_exists($this->imagick, 'mergeImageLayers') && defined('Imagick::LAYERMETHOD_UNDEFINED')) {
-                $this->imagick = $this->imagick->mergeImageLayers(\Imagick::LAYERMETHOD_UNDEFINED);
-            } elseif (method_exists($this->imagick, 'flattenImages')) {
-                $this->imagick = $this->imagick->flattenImages();
-            }
-        } catch (\ImagickException $e) {
-            throw new RuntimeException('Flatten operation failed', $e->getCode(), $e);
-        }
-    }
+    
 
     /**
      * Applies options before save or output.
@@ -749,116 +712,7 @@ final class Image extends AbstractImage
      *
      * @return \Imagick
      */
-    private function applyImageOptions(\Imagick $image, array $options, $path)
-    {
-        if (isset($options['format'])) {
-            $format = $options['format'];
-        } elseif ('' !== $extension = pathinfo($path, \PATHINFO_EXTENSION)) {
-            $format = $extension;
-        } else {
-            $format = pathinfo($image->getImageFilename(), \PATHINFO_EXTENSION);
-        }
-
-        $format = strtolower($format);
-
-        switch ($format) {
-            case 'jpeg':
-            case 'jpg':
-            case 'pjpeg':
-                if (!isset($options['jpeg_quality'])) {
-                    if (isset($options['quality'])) {
-                        $options['jpeg_quality'] = $options['quality'];
-                    }
-                }
-                if (isset($options['jpeg_quality'])) {
-                    $image->setimagecompressionquality($options['jpeg_quality']);
-                    $image->setcompressionquality($options['jpeg_quality']);
-                }
-                if (isset($options['jpeg_sampling_factors'])) {
-                    if (!is_array($options['jpeg_sampling_factors']) || \count($options['jpeg_sampling_factors']) < 1) {
-                        throw new InvalidArgumentException('jpeg_sampling_factors option should be an array of integers');
-                    }
-                    $image->setSamplingFactors(array_map(function ($factor) {
-                        return (int) $factor;
-                    }, $options['jpeg_sampling_factors']));
-                }
-                break;
-            case 'png':
-                if (!isset($options['png_compression_level'])) {
-                    if (isset($options['quality'])) {
-                        $options['png_compression_level'] = round((100 - $options['quality']) * 9 / 100);
-                    }
-                }
-                if (isset($options['png_compression_level'])) {
-                    if ($options['png_compression_level'] < 0 || $options['png_compression_level'] > 9) {
-                        throw new InvalidArgumentException('png_compression_level option should be an integer from 0 to 9');
-                    }
-                }
-                if (isset($options['png_compression_filter'])) {
-                    if ($options['png_compression_filter'] < 0 || $options['png_compression_filter'] > 9) {
-                        throw new InvalidArgumentException('png_compression_filter option should be an integer from 0 to 9');
-                    }
-                }
-                if (isset($options['png_compression_level']) || isset($options['png_compression_filter'])) {
-                    // first digit: compression level (default: 7)
-                    $compression = isset($options['png_compression_level']) ? $options['png_compression_level'] * 10 : 70;
-                    // second digit: compression filter (default: 5)
-                    $compression += isset($options['png_compression_filter']) ? $options['png_compression_filter'] : 5;
-                    $image->setimagecompressionquality($compression);
-                    $image->setcompressionquality($compression);
-                }
-                break;
-            case 'webp':
-                if (!isset($options['webp_quality'])) {
-                    if (isset($options['quality'])) {
-                        $options['webp_quality'] = $options['quality'];
-                    }
-                }
-                if (isset($options['webp_quality'])) {
-                    $image->setImageCompressionQuality($options['webp_quality']);
-                }
-                if (isset($options['webp_lossless'])) {
-                    $image->setOption('webp:lossless', $options['webp_lossless']);
-                }
-                break;
-        }
-        if (isset($options['resolution-units']) && isset($options['resolution-x']) && isset($options['resolution-y'])) {
-            if (empty($options['resampling-filter'])) {
-                $filterName = ImageInterface::FILTER_UNDEFINED;
-            } else {
-                $filterName = $options['resampling-filter'];
-            }
-            $filter = $this->getFilter($filterName);
-            switch ($options['resolution-units']) {
-                case ImageInterface::RESOLUTION_PIXELSPERCENTIMETER:
-                    $image->setImageUnits(\Imagick::RESOLUTION_PIXELSPERCENTIMETER);
-                    break;
-                case ImageInterface::RESOLUTION_PIXELSPERINCH:
-                    $image->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
-                    break;
-                default:
-                    throw new RuntimeException('Unsupported image unit format');
-            }
-            $image->setImageResolution($options['resolution-x'], $options['resolution-y']);
-            $image->resampleImage($options['resolution-x'], $options['resolution-y'], $filter, 0);
-        }
-        if (!empty($options['optimize'])) {
-            try {
-                $image = $image->coalesceImages();
-                $optimized = $image->optimizeimagelayers();
-            } catch (\ImagickException $e) {
-                throw new RuntimeException('Image optimization failed', $e->getCode(), $e);
-            }
-            if ($optimized === false) {
-                throw new RuntimeException('Image optimization failed');
-            }
-            if ($optimized instanceof \Imagick) {
-                $image = $optimized;
-            }
-        }
-
-        return $image;
-    }
+    
 
     /**
      * Gets specifically formatted color string from Color instance.
@@ -867,13 +721,7 @@ final class Image extends AbstractImage
      *
      * @return \ImagickPixel
      */
-    private function getColor(ColorInterface $color)
-    {
-        $pixel = new \ImagickPixel((string) $color);
-        $pixel->setColorValue(\Imagick::COLOR_ALPHA, $color->getAlpha() / 100);
-
-        return $pixel;
-    }
+    
 
     /**
      * Checks whether given $fill is linear and opaque.
@@ -882,33 +730,14 @@ final class Image extends AbstractImage
      *
      * @return bool
      */
-    private function isLinearOpaque(FillInterface $fill)
-    {
-        return $fill instanceof Linear && $fill->getStart()->isOpaque() && $fill->getEnd()->isOpaque();
-    }
+    
 
     /**
      * Performs optimized gradient fill for non-opaque linear gradients.
      *
      * @param \Imagine\Image\Fill\Gradient\Linear $fill
      */
-    private function applyFastLinear(Linear $fill)
-    {
-        $gradient = new \Imagick();
-        $size = $this->getSize();
-        $color = sprintf('gradient:%s-%s', (string) $fill->getStart(), (string) $fill->getEnd());
-
-        if ($fill instanceof Horizontal) {
-            $gradient->newPseudoImage($size->getHeight(), $size->getWidth(), $color);
-            $gradient->rotateImage(new \ImagickPixel(), 90);
-        } else {
-            $gradient->newPseudoImage($size->getWidth(), $size->getHeight(), $color);
-        }
-
-        $this->imagick->compositeImage($gradient, \Imagick::COMPOSITE_OVER, 0, 0);
-        $gradient->clear();
-        $gradient->destroy();
-    }
+    
 
     /**
      * Internal.
@@ -921,25 +750,7 @@ final class Image extends AbstractImage
      *
      * @return string mime-type
      */
-    private function getMimeType($format)
-    {
-        static $mimeTypes = array(
-            'jpeg' => 'image/jpeg',
-            'jpg' => 'image/jpeg',
-            'gif' => 'image/gif',
-            'png' => 'image/png',
-            'wbmp' => 'image/vnd.wap.wbmp',
-            'xbm' => 'image/xbm',
-            'webp' => 'image/webp',
-            'bmp' => 'image/bmp',
-        );
-
-        if (!isset($mimeTypes[$format])) {
-            throw new RuntimeException(sprintf('Unsupported format given. Only %s are supported, %s given', implode(', ', array_keys($mimeTypes)), $format));
-        }
-
-        return $mimeTypes[$format];
-    }
+    
 
     /**
      * Sets colorspace and image type, assigns the palette.
@@ -948,27 +759,7 @@ final class Image extends AbstractImage
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function setColorspace(PaletteInterface $palette)
-    {
-        $typeMapping = array(
-            // We use Matte variants to preserve alpha
-            //
-            // (the IMGTYPE_...ALPHA constants are only available since ImageMagick 7 and Imagick 3.4.3, previously they were named
-            // IMGTYPE_...MATTE but in some combinations of different Imagick and ImageMagick versions none of them are avaiable at all,
-            // so we found no other way to fix it as to hard code the values here)
-            PaletteInterface::PALETTE_CMYK => defined('\Imagick::IMGTYPE_TRUECOLORALPHA') ? \Imagick::IMGTYPE_TRUECOLORALPHA : (defined('\Imagick::IMGTYPE_TRUECOLORMATTE') ? \Imagick::IMGTYPE_TRUECOLORMATTE : 7),
-            PaletteInterface::PALETTE_RGB => defined('\Imagick::IMGTYPE_TRUECOLORALPHA') ? \Imagick::IMGTYPE_TRUECOLORALPHA : (defined('\Imagick::IMGTYPE_TRUECOLORMATTE') ? \Imagick::IMGTYPE_TRUECOLORMATTE : 7),
-            PaletteInterface::PALETTE_GRAYSCALE => defined('\Imagick::IMGTYPE_GRAYSCALEALPHA') ? \Imagick::IMGTYPE_GRAYSCALEALPHA : (defined('\Imagick::IMGTYPE_GRAYSCALEMATTE') ? \Imagick::IMGTYPE_GRAYSCALEMATTE : 3),
-        );
-
-        if (!isset(static::$colorspaceMapping[$palette->name()])) {
-            throw new InvalidArgumentException(sprintf('The palette %s is not supported by Imagick driver', $palette->name()));
-        }
-
-        $this->imagick->setType($typeMapping[$palette->name()]);
-        $this->imagick->setColorspace(static::$colorspaceMapping[$palette->name()]);
-        $this->palette = $palette;
-    }
+    
 
     /**
      * Older imagemagick versions does not support colorspace conversions.
@@ -976,14 +767,7 @@ final class Image extends AbstractImage
      *
      * @return bool
      */
-    private function detectColorspaceConversionSupport()
-    {
-        if (null !== static::$supportsColorspaceConversion) {
-            return static::$supportsColorspaceConversion;
-        }
-
-        return static::$supportsColorspaceConversion = method_exists('Imagick', 'setColorspace');
-    }
+    
 
     /**
      * ImageMagick without the lcms delegate cannot handle profiles well.
@@ -991,26 +775,7 @@ final class Image extends AbstractImage
      *
      * @return bool
      */
-    private function detectProfilesSupport()
-    {
-        if (null !== self::$supportsProfiles) {
-            return self::$supportsProfiles;
-        }
-
-        self::$supportsProfiles = false;
-
-        try {
-            $image = new \Imagick();
-            $image->newImage(1, 1, new \ImagickPixel('#fff'));
-            $image->profileImage('icc', 'x');
-        } catch (\ImagickException $exception) {
-            // If ImageMagick has support for profiles,
-            // it detects the invalid profile data 'x' and throws an exception.
-            self::$supportsProfiles = true;
-        }
-
-        return self::$supportsProfiles;
-    }
+    
 
     /**
      * Returns the filter if it's supported.
@@ -1021,36 +786,7 @@ final class Image extends AbstractImage
      *
      * @return string
      */
-    private function getFilter($filter = ImageInterface::FILTER_UNDEFINED)
-    {
-        static $supportedFilters = array(
-            ImageInterface::FILTER_UNDEFINED => \Imagick::FILTER_UNDEFINED,
-            ImageInterface::FILTER_BESSEL => \Imagick::FILTER_BESSEL,
-            ImageInterface::FILTER_BLACKMAN => \Imagick::FILTER_BLACKMAN,
-            ImageInterface::FILTER_BOX => \Imagick::FILTER_BOX,
-            ImageInterface::FILTER_CATROM => \Imagick::FILTER_CATROM,
-            ImageInterface::FILTER_CUBIC => \Imagick::FILTER_CUBIC,
-            ImageInterface::FILTER_GAUSSIAN => \Imagick::FILTER_GAUSSIAN,
-            ImageInterface::FILTER_HANNING => \Imagick::FILTER_HANNING,
-            ImageInterface::FILTER_HAMMING => \Imagick::FILTER_HAMMING,
-            ImageInterface::FILTER_HERMITE => \Imagick::FILTER_HERMITE,
-            ImageInterface::FILTER_LANCZOS => \Imagick::FILTER_LANCZOS,
-            ImageInterface::FILTER_MITCHELL => \Imagick::FILTER_MITCHELL,
-            ImageInterface::FILTER_POINT => \Imagick::FILTER_POINT,
-            ImageInterface::FILTER_QUADRATIC => \Imagick::FILTER_QUADRATIC,
-            ImageInterface::FILTER_SINC => \Imagick::FILTER_SINC,
-            ImageInterface::FILTER_TRIANGLE => \Imagick::FILTER_TRIANGLE,
-        );
-
-        if (!array_key_exists($filter, $supportedFilters)) {
-            throw new InvalidArgumentException(sprintf(
-                'The resampling filter "%s" is not supported by Imagick driver.',
-                $filter
-            ));
-        }
-
-        return $supportedFilters[$filter];
-    }
+    
 
     /**
      * Clone the Imagick resource of this instance.

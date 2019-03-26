@@ -308,16 +308,7 @@ abstract class AbstractDrawerTest extends ImagineTestCase
         $this->assertFileExists($file12);
     }
 
-    private function getColor($color)
-    {
-        static $palette;
-
-        if (!$palette) {
-            $palette = new RGB();
-        }
-
-        return $palette->color($color);
-    }
+    
 
     /**
      * @return ImagineInterface

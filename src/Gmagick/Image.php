@@ -286,88 +286,7 @@ final class Image extends AbstractImage
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function applyImageOptions(\Gmagick $image, array $options, $path)
-    {
-        if (isset($options['format'])) {
-            $format = $options['format'];
-        } elseif ('' !== $extension = pathinfo($path, \PATHINFO_EXTENSION)) {
-            $format = $extension;
-        } else {
-            $format = pathinfo($image->getImageFilename(), \PATHINFO_EXTENSION);
-        }
-
-        $format = strtolower($format);
-
-        switch ($format) {
-            case 'jpeg':
-            case 'jpg':
-            case 'pjpeg':
-                if (!isset($options['jpeg_quality'])) {
-                    if (isset($options['quality'])) {
-                        $options['jpeg_quality'] = $options['quality'];
-                    }
-                }
-                if (isset($options['jpeg_quality'])) {
-                    $image->setCompressionQuality($options['jpeg_quality']);
-                }
-                if (isset($options['jpeg_sampling_factors'])) {
-                    if (!is_array($options['jpeg_sampling_factors']) || \count($options['jpeg_sampling_factors']) < 1) {
-                        throw new InvalidArgumentException('jpeg_sampling_factors option should be an array of integers');
-                    }
-                    $image->setSamplingFactors(array_map(function ($factor) {
-                        return (int) $factor;
-                    }, $options['jpeg_sampling_factors']));
-                }
-                break;
-            case 'png':
-                if (!isset($options['png_compression_level'])) {
-                    if (isset($options['quality'])) {
-                        $options['png_compression_level'] = round((100 - $options['quality']) * 9 / 100);
-                    }
-                }
-                if (isset($options['png_compression_level'])) {
-                    if ($options['png_compression_level'] < 0 || $options['png_compression_level'] > 9) {
-                        throw new InvalidArgumentException('png_compression_level option should be an integer from 0 to 9');
-                    }
-                }
-                if (isset($options['png_compression_filter'])) {
-                    if ($options['png_compression_filter'] < 0 || $options['png_compression_filter'] > 9) {
-                        throw new InvalidArgumentException('png_compression_filter option should be an integer from 0 to 9');
-                    }
-                }
-                if (isset($options['png_compression_level']) || isset($options['png_compression_filter'])) {
-                    // first digit: compression level (default: 7)
-                    $compression = isset($options['png_compression_level']) ? $options['png_compression_level'] * 10 : 70;
-                    // second digit: compression filter (default: 5)
-                    $compression += isset($options['png_compression_filter']) ? $options['png_compression_filter'] : 5;
-                    $image->setCompressionQuality($compression);
-                }
-                break;
-            case 'webp':
-                if (!isset($options['webp_quality'])) {
-                    if (isset($options['quality'])) {
-                        $options['webp_quality'] = $options['quality'];
-                    }
-                }
-                if (isset($options['webp_quality'])) {
-                    $image->setCompressionQuality($options['webp_quality']);
-                }
-                break;
-        }
-        if (isset($options['resolution-units']) && isset($options['resolution-x']) && isset($options['resolution-y'])) {
-            switch ($options['resolution-units']) {
-                case ImageInterface::RESOLUTION_PIXELSPERCENTIMETER:
-                    $image->setimageunits(\Gmagick::RESOLUTION_PIXELSPERCENTIMETER);
-                    break;
-                case ImageInterface::RESOLUTION_PIXELSPERINCH:
-                    $image->setimageunits(\Gmagick::RESOLUTION_PIXELSPERINCH);
-                    break;
-                default:
-                    throw new InvalidArgumentException('Unsupported image unit format');
-            }
-            $image->setimageresolution($options['resolution-x'], $options['resolution-y']);
-        }
-    }
+    
 
     /**
      * {@inheritdoc}
@@ -427,30 +346,7 @@ final class Image extends AbstractImage
      * @param array $options
      * @param string $path
      */
-    private function prepareOutput(array $options, $path = null)
-    {
-        if (isset($options['format'])) {
-            $this->gmagick->setimageformat($options['format']);
-        }
-
-        if (isset($options['animated']) && true === $options['animated']) {
-            $format = isset($options['format']) ? $options['format'] : 'gif';
-            $delay = isset($options['animated.delay']) ? $options['animated.delay'] : null;
-            $loops = isset($options['animated.loops']) ? $options['animated.loops'] : 0;
-
-            $options['flatten'] = false;
-
-            $this->layers()->animate($format, $delay, $loops);
-        } else {
-            $this->layers()->merge();
-        }
-        $this->applyImageOptions($this->gmagick, $options, $path);
-
-        // flatten only if image has multiple layers
-        if ((!isset($options['flatten']) || $options['flatten'] === true) && $this->layers()->count() > 1) {
-            $this->flatten();
-        }
-    }
+    
 
     /**
      * {@inheritdoc}
@@ -790,19 +686,7 @@ final class Image extends AbstractImage
     /**
      * Flatten the image.
      */
-    private function flatten()
-    {
-        /*
-         * @see http://pecl.php.net/bugs/bug.php?id=22435
-         */
-        if (method_exists($this->gmagick, 'flattenImages')) {
-            try {
-                $this->gmagick = $this->gmagick->flattenImages();
-            } catch (\GmagickException $e) {
-                throw new RuntimeException('Flatten operation failed', $e->getCode(), $e);
-            }
-        }
-    }
+    
 
     /**
      * Gets specifically formatted color string from Color instance.
@@ -813,14 +697,7 @@ final class Image extends AbstractImage
      *
      * @return \GmagickPixel
      */
-    private function getColor(ColorInterface $color)
-    {
-        if (!$color->isOpaque()) {
-            throw new InvalidArgumentException('Gmagick doesn\'t support transparency');
-        }
-
-        return new \GmagickPixel((string) $color);
-    }
+    
 
     /**
      * Get the mime type based on format.
@@ -831,25 +708,7 @@ final class Image extends AbstractImage
      *
      * @return string mime-type
      */
-    private function getMimeType($format)
-    {
-        static $mimeTypes = array(
-            'jpeg' => 'image/jpeg',
-            'jpg' => 'image/jpeg',
-            'gif' => 'image/gif',
-            'png' => 'image/png',
-            'webp' => 'image/webp',
-            'wbmp' => 'image/vnd.wap.wbmp',
-            'xbm' => 'image/xbm',
-            'bmp' => 'image/bmp',
-        );
-
-        if (!isset($mimeTypes[$format])) {
-            throw new InvalidArgumentException(sprintf('Unsupported format given. Only %s are supported, %s given', implode(', ', array_keys($mimeTypes)), $format));
-        }
-
-        return $mimeTypes[$format];
-    }
+    
 
     /**
      * Sets colorspace and image type, assigns the palette.
@@ -858,16 +717,7 @@ final class Image extends AbstractImage
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      */
-    private function setColorspace(PaletteInterface $palette)
-    {
-        $colorspaceMapping = self::getColorspaceMapping();
-        if (!isset($colorspaceMapping[$palette->name()])) {
-            throw new InvalidArgumentException(sprintf('The palette %s is not supported by Gmagick driver', $palette->name()));
-        }
-
-        $this->gmagick->setimagecolorspace($colorspaceMapping[$palette->name()]);
-        $this->palette = $palette;
-    }
+    
 
     /**
      * @return array

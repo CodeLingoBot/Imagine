@@ -1000,20 +1000,11 @@ abstract class AbstractImageTest extends ImagineTestCase
 
     abstract protected function getImageResolution(ImageInterface $image);
 
-    private function getMonoLayeredImage()
-    {
-        return $this->getImagine()->open(IMAGINE_TEST_FIXTURESFOLDER . '/google.png');
-    }
+    
 
-    private function getMultiLayeredImage()
-    {
-        return $this->getImagine()->open(IMAGINE_TEST_FIXTURESFOLDER . '/cat.gif');
-    }
+    
 
-    private function getInconsistentMultiLayeredImage()
-    {
-        return $this->getImagine()->open(IMAGINE_TEST_FIXTURESFOLDER . '/anima.gif');
-    }
+    
 
     /**
      * @return \Imagine\Image\ImagineInterface

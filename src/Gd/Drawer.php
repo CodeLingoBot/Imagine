@@ -391,26 +391,7 @@ final class Drawer implements DrawerInterface
      *
      * @return resource
      */
-    private function getColor(ColorInterface $color)
-    {
-        if (!$color instanceof RGBColor) {
-            throw new InvalidArgumentException('GD driver only supports RGB colors');
-        }
+    
 
-        $gdColor = imagecolorallocatealpha($this->resource, $color->getRed(), $color->getGreen(), $color->getBlue(), (100 - $color->getAlpha()) * 127 / 100);
-        if (false === $gdColor) {
-            throw new RuntimeException(sprintf('Unable to allocate color "RGB(%s, %s, %s)" with transparency of %d percent', $color->getRed(), $color->getGreen(), $color->getBlue(), $color->getAlpha()));
-        }
-
-        return $gdColor;
-    }
-
-    private function loadGdInfo()
-    {
-        if (!function_exists('gd_info')) {
-            throw new RuntimeException('Gd not installed');
-        }
-
-        $this->info = gd_info();
-    }
+    
 }

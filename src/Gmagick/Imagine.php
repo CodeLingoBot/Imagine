@@ -157,20 +157,7 @@ class Imagine extends AbstractImagine
      *
      * @return \Imagine\Image\Palette\PaletteInterface
      */
-    private function createPalette(\Gmagick $gmagick)
-    {
-        switch ($gmagick->getimagecolorspace()) {
-            case \Gmagick::COLORSPACE_SRGB:
-            case \Gmagick::COLORSPACE_RGB:
-                return new RGB();
-            case \Gmagick::COLORSPACE_CMYK:
-                return new CMYK();
-            case \Gmagick::COLORSPACE_GRAY:
-                return new Grayscale();
-            default:
-                throw new NotSupportedException('Only RGB and CMYK colorspace are currently supported');
-        }
-    }
+    
 
     /**
      * @param string $content
@@ -180,15 +167,5 @@ class Imagine extends AbstractImagine
      *
      * @return \Imagine\Image\ImageInterface
      */
-    private function doLoad($content, MetadataBag $metadata)
-    {
-        try {
-            $gmagick = new \Gmagick();
-            $gmagick->readimageblob($content);
-        } catch (\GmagickException $e) {
-            throw new RuntimeException('Could not load image from string', $e->getCode(), $e);
-        }
-
-        return $this->getClassFactory()->createImage(ClassFactoryInterface::HANDLE_GMAGICK, $gmagick, $this->createPalette($gmagick), $metadata);
-    }
+    
 }

@@ -155,19 +155,7 @@ class Layers extends AbstractLayers
      *
      * @return \Imagine\Imagick\Image
      */
-    private function extractAt($offset)
-    {
-        if (!isset($this->layers[$offset])) {
-            try {
-                $this->resource->setIteratorIndex($offset);
-                $this->layers[$offset] = $this->getClassFactory()->createImage(ClassFactoryInterface::HANDLE_IMAGICK, $this->resource->getImage(), $this->palette, new MetadataBag());
-            } catch (\ImagickException $e) {
-                throw new RuntimeException(sprintf('Failed to extract layer %d', $offset), $e->getCode(), $e);
-            }
-        }
-
-        return $this->layers[$offset];
-    }
+    
 
     /**
      * {@inheritdoc}

@@ -67,26 +67,7 @@ abstract class AbstractMetadataReader implements MetadataReaderInterface
      *
      * @return array
      */
-    private function getStreamMetadata($resource)
-    {
-        $metadata = array();
-
-        if ($resource instanceof LoaderInterface) {
-            $metadata['uri'] = $resource->getPath();
-            if ($resource->isLocalFile()) {
-                $metadata['filepath'] = realpath($resource->getPath());
-            }
-        } elseif (false !== $data = @stream_get_meta_data($resource)) {
-            if (isset($data['uri'])) {
-                $metadata['uri'] = $data['uri'];
-                if (stream_is_local($resource)) {
-                    $metadata['filepath'] = realpath($data['uri']);
-                }
-            }
-        }
-
-        return $metadata;
-    }
+    
 
     /**
      * Extracts metadata from a file.
